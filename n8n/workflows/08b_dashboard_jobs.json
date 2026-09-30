@@ -1,0 +1,62 @@
+{
+  "name": "08b_dashboard_jobs",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "dashboard-jobs",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "1",
+      "name": "Webhook Jobs",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT title, company, location, remote_type, source, url, status, published_at FROM jobs ORDER BY published_at DESC LIMIT 20;"
+      },
+      "id": "2",
+      "name": "Get Latest Jobs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Jobs": {
+      "main": [
+        [
+          {
+            "node": "Get Latest Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

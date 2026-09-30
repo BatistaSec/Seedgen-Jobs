@@ -1,0 +1,88 @@
+{
+  "name": "08_dashboard_api",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "dashboard-api",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "1",
+      "name": "Webhook (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  (SELECT COUNT(*) FROM jobs) as total_jobs,\n  (SELECT COUNT(*) FROM jobs WHERE status = 'NEW') as new_jobs,\n  (SELECT COUNT(*) FROM job_analysis WHERE overall_score >= 80) as high_match,\n  (SELECT COUNT(*) FROM jobs WHERE status = 'REVIEW') as in_review,\n  (SELECT COUNT(*) FROM jobs WHERE status = 'APPLIED') as applied;"
+      },
+      "id": "2",
+      "name": "Query Dashboard Metrics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"total_jobs\": {{ $json.total_jobs }},\n  \"new_jobs\": {{ $json.new_jobs }},\n  \"high_match\": {{ $json.high_match }},\n  \"in_review\": {{ $json.in_review }},\n  \"applied\": {{ $json.applied }}\n}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Format JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (GET)": {
+      "main": [
+        [
+          {
+            "node": "Query Dashboard Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Dashboard Metrics": {
+      "main": [
+        [
+          {
+            "node": "Format JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

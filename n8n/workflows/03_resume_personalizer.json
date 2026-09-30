@@ -1,0 +1,172 @@
+{
+  "name": "03_resume_personalizer",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Trigger / Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT j.title, j.company, j.description FROM jobs j INNER JOIN job_analysis ja ON j.id = ja.job_id WHERE ja.overall_score >= 70 AND j.status = 'READY' LIMIT 1;"
+      },
+      "id": "2",
+      "name": "Get Eligible Job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/candidate/resume-master.md"
+      },
+      "id": "3",
+      "name": "Read Master Resume",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Você é um engenheiro reescrevendo o currículo. Não alucine. Destaque tecnologias presentes nesta VAGA: {{ $json.description }}. Use como base o CURRÍCULO: {{ $node['Read Master Resume'].json.data }}. Retorne apenas Markdown.\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "AI Personalize Resume",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/generated/resumes/CV_JoaoBatista_{{ $node['Get Eligible Job'].json.company.replace(/\\s/g, '_') }}.md",
+        "dataPropertyName": "data"
+      },
+      "id": "5",
+      "name": "Write Custom MD",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: { status: \"resume_saved\", message: \"Custom resume generated successfully\" } };"
+      },
+      "id": "6",
+      "name": "Finalize Resume",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger / Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Eligible Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Eligible Job": {
+      "main": [
+        [
+          {
+            "node": "Read Master Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Master Resume": {
+      "main": [
+        [
+          {
+            "node": "AI Personalize Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Personalize Resume": {
+      "main": [
+        [
+          {
+            "node": "Write Custom MD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Custom MD": {
+      "main": [
+        [
+          {
+            "node": "Finalize Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

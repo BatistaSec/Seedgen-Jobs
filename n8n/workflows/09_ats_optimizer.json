@@ -1,0 +1,394 @@
+{
+  "name": "09_ats_optimizer",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "JOB VAGA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM jobs WHERE status = 'ANALYZED' LIMIT 1;"
+      },
+      "id": "2",
+      "name": "IA Job Analyzer",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Extraia as palavras-chave (MANDATORY, IMPORTANT, OPTIONAL) da seguinte descrição de vaga: {{ $json.description }}\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Keyword Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Você é um auditor. Faça o cruzamento das keywords extraídas: {{ $json.candidates[0].content.parts[0].text }} contra o profile.json real. Retorne JSON estruturado com matched_keywords, missing_keywords e ats_keyword_score. É PROIBIDO inventar skills que não estão no perfil.\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Keyword Matching",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Gere um JSON com adapted_summary (3-5 linhas focadas nas matched_keywords), candidate_title e instructions_for_resume. Baseie-se APENAS nas habilidades validadas.\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "ATS Optimizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Gere o currículo final em Markdown estrito baseado nas regras ATS. O arquivo será salvo como CV_ATS_MD. Retorne apenas Markdown limpo. Adicione { \\\"validation_passed\\\": true } no final caso não exista repetição excessiva ou alucinação.\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Resume Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.candidates[0].content.parts[0].text }}",
+              "operation": "contains",
+              "value2": "validation_passed"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "ATS Validator",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/generated/resumes/CV_ATS_JoaoBatista_{{ $node['IA Job Analyzer'].json.company.replace(/\\s/g, '_') }}.md",
+        "dataPropertyName": "data"
+      },
+      "id": "8",
+      "name": "Save Markdown File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: { status: \"docx_ready\", message: \"DOCX resume generated\" } };"
+      },
+      "id": "9",
+      "name": "CV ATS (.docx)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: { status: \"pdf_ready\", message: \"PDF resume generated\" } };"
+      },
+      "id": "10",
+      "name": "CV visual (.pdf)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{$env.TELEGRAM_CHAT_ID}}"
+            },
+            {
+              "name": "text",
+              "value": "=📄 Currículos Gerados com Sucesso!\nOs arquivos .DOCX e .PDF de {{ $node['IA Job Analyzer'].json.company }} estão prontos na pasta /resumes/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11",
+      "name": "NOTIFICAÇÃO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1950,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "JOB VAGA": {
+      "main": [
+        [
+          {
+            "node": "IA Job Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA Job Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Keyword Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keyword Extractor": {
+      "main": [
+        [
+          {
+            "node": "Keyword Matching",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keyword Matching": {
+      "main": [
+        [
+          {
+            "node": "ATS Optimizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ATS Optimizer": {
+      "main": [
+        [
+          {
+            "node": "Resume Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Generator": {
+      "main": [
+        [
+          {
+            "node": "ATS Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ATS Validator": {
+      "main": [
+        [
+          {
+            "node": "Save Markdown File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Save Markdown File": {
+      "main": [
+        [
+          {
+            "node": "CV ATS (.docx)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CV visual (.pdf)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV ATS (.docx)": {
+      "main": [
+        [
+          {
+            "node": "NOTIFICAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV visual (.pdf)": {
+      "main": [
+        [
+          {
+            "node": "NOTIFICAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

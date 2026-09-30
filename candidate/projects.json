@@ -1,0 +1,31 @@
+[
+  {
+    "title": "Nome do Projeto 1",
+    "description": "Breve descrição do que o projeto faz e qual problema resolve.",
+    "technologies": [
+      "Tech1",
+      "Tech2",
+      "Tech3"
+    ],
+    "highlights": [
+      "Funcionalidade ou conquista relevante 1.",
+      "Funcionalidade ou conquista relevante 2.",
+      "Funcionalidade ou conquista relevante 3."
+    ],
+    "link": "https://github.com/seu-usuario/projeto1"
+  },
+  {
+    "title": "Nome do Projeto 2",
+    "description": "Breve descrição do que o projeto faz e qual problema resolve.",
+    "technologies": [
+      "Tech1",
+      "Tech2",
+      "Tech3"
+    ],
+    "highlights": [
+      "Funcionalidade ou conquista relevante 1.",
+      "Funcionalidade ou conquista relevante 2."
+    ],
+    "link": "https://github.com/seu-usuario/projeto2"
+  }
+]

@@ -1,0 +1,148 @@
+{
+  "name": "04_message_generator",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT j.id, j.title, j.company, j.description FROM jobs j INNER JOIN job_analysis ja ON j.id = ja.job_id WHERE ja.overall_score >= 70 AND j.status = 'READY' LIMIT 1;"
+      },
+      "id": "2",
+      "name": "Get Eligible Job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{$env.AI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={ \"parts\": [ { \"text\": \"Gere uma mensagem curta, direta e profissional de apresentação (Cover Letter) para recrutador. A vaga é: {{ $json.title }} na {{ $json.company }}. Retorne apenas a mensagem em texto plano.\" } ] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "AI Generate Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/generated/messages/Message_{{ $node['Get Eligible Job'].json.company.replace(/\\s/g, '_') }}.txt",
+        "dataPropertyName": "data"
+      },
+      "id": "4",
+      "name": "Write Message txt",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO applications (job_id, status, cover_letter) VALUES ({{ $node['Get Eligible Job'].json.id }}, 'READY', '{{ $json.data }}');"
+      },
+      "id": "5",
+      "name": "Insert Application DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Eligible Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Eligible Job": {
+      "main": [
+        [
+          {
+            "node": "AI Generate Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Generate Message": {
+      "main": [
+        [
+          {
+            "node": "Write Message txt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Message txt": {
+      "main": [
+        [
+          {
+            "node": "Insert Application DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

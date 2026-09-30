@@ -1,0 +1,80 @@
+{
+  "name": "06_application_tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-status",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Update Status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE applications SET status = '{{ $json.body.status }}', notes = '{{ $json.body.notes }}' WHERE job_id = {{ $json.body.job_id }};\nUPDATE jobs SET status = '{{ $json.body.status }}' WHERE id = {{ $json.body.job_id }};"
+      },
+      "id": "2",
+      "name": "Update DB Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Status atualizado para {{ $json.body.status }}\"\n}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Update Status": {
+      "main": [
+        [
+          {
+            "node": "Update DB Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update DB Status": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

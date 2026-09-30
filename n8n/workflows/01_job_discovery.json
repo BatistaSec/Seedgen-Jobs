@@ -1,0 +1,158 @@
+{
+  "name": "01_job_discovery",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://remotive.com/api/remote-jobs?category=software-dev&limit=20",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Fetch Remotive API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://arbeitnow.com/api/job-board-api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Fetch Arbeitnow API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        300,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nlet rawJob = $input.item.json;\nlet normalized = {};\n\n// Adapter logic based on source structure\nif (rawJob.company_name && rawJob.job_type) { \n  // Remotive format\n  normalized.source = 'remotive';\n  normalized.external_id = String(rawJob.id);\n  normalized.title = rawJob.title;\n  normalized.company = rawJob.company_name;\n  normalized.location = rawJob.candidate_required_location;\n  normalized.remote_type = 'Remote';\n  normalized.salary = rawJob.salary;\n  normalized.description = rawJob.description;\n  normalized.url = rawJob.url;\n  normalized.published_at = rawJob.publication_date;\n} else if (rawJob.company_name && rawJob.slug) {\n  // Arbeitnow format\n  normalized.source = 'arbeitnow';\n  normalized.external_id = rawJob.slug;\n  normalized.title = rawJob.title;\n  normalized.company = rawJob.company_name;\n  normalized.location = rawJob.location;\n  normalized.remote_type = rawJob.remote ? 'Remote' : 'On-site';\n  normalized.salary = null;\n  normalized.description = rawJob.description;\n  normalized.url = rawJob.url;\n  normalized.published_at = new Date(rawJob.created_at * 1000).toISOString();\n}\n\n// Generate Hash for deduplication\nconst hashData = normalized.source + '_' + normalized.external_id;\nnormalized.hash = crypto.createHash('sha256').update(hashData).digest('hex');\n\nreturn { json: normalized };"
+      },
+      "id": "4",
+      "name": "Normalize & Hash (Adapter)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO jobs (source, external_id, title, company, location, remote_type, salary, description, url, published_at, hash, status) VALUES ('{{ $json.source }}', '{{ $json.external_id }}', '{{ $json.title }}', '{{ $json.company }}', '{{ $json.location }}', '{{ $json.remote_type }}', '{{ $json.salary }}', '{{ $json.description }}', '{{ $json.url }}', '{{ $json.published_at }}', '{{ $json.hash }}', 'NEW') ON CONFLICT (hash) DO NOTHING;"
+      },
+      "id": "5",
+      "name": "Insert/Deduplicate Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Remotive API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Arbeitnow API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Remotive API": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Hash (Adapter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Arbeitnow API": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Hash (Adapter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Hash (Adapter)": {
+      "main": [
+        [
+          {
+            "node": "Insert/Deduplicate Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

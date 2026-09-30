@@ -1,0 +1,14 @@
+{
+  "name": "seedgen-jobs-scripts",
+  "version": "1.0.0",
+  "description": "Utilitários para geração de PDF e integração no n8n",
+  "main": "generate_pdf.js",
+  "dependencies": {
+    "html-docx-js": "^0.3.1",
+    "markdown-pdf": "^11.0.0",
+    "marked": "^18.0.14"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

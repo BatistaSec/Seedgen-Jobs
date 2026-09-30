@@ -1,0 +1,38 @@
+# Variáveis de ambiente (NUNCA subir pro GitHub!)
+.env
+
+# Scripts de fix local (contêm credenciais)
+fix_all_envs.py
+fix_workflows.py
+
+# Dependências Node
+node_modules/
+package-lock.json
+
+# Docker volumes (dados locais)
+postgres_data/
+n8n_data/
+
+# Credenciais do n8n
+n8n/credentials/
+
+# Arquivos gerados (currículos personalizados)
+generated/resumes/*.md
+generated/resumes/*.docx
+generated/resumes/*.pdf
+generated/messages/*.md
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

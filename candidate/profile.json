@@ -1,0 +1,76 @@
+{
+  "name": "Seu Nome Completo",
+  "headline": "Sua Área | Tecnologias Principais",
+  "location": "Sua Cidade - UF",
+  "target_roles": [
+    "Cargo desejado 1",
+    "Cargo desejado 2",
+    "Cargo desejado 3"
+  ],
+  "summary": "Breve resumo profissional (3-5 linhas). Descreva sua formação, foco técnico, principais projetos e o que busca. Este campo é usado pela IA para gerar o resumo adaptado do currículo.",
+  "education": [
+    {
+      "degree": "Bacharelado",
+      "field": "Ciência da Computação",
+      "institution": "Nome da Instituição",
+      "status": "Em andamento (2025-2029)"
+    }
+  ],
+  "skills": {
+    "backend": [
+      "Java",
+      "Spring Boot",
+      "APIs REST"
+    ],
+    "frontend": [
+      "React",
+      "JavaScript",
+      "HTML",
+      "CSS"
+    ],
+    "database": [
+      "MySQL",
+      "PostgreSQL"
+    ],
+    "devops": [
+      "Git",
+      "Docker",
+      "GitHub Actions"
+    ],
+    "testing": [
+      "JUnit",
+      "Mockito"
+    ],
+    "other": [
+      "Outras skills relevantes"
+    ]
+  },
+  "certifications": [
+    "Certificação 1 — Plataforma",
+    "Certificação 2 — Plataforma"
+  ],
+  "languages": [
+    {
+      "language": "Português",
+      "proficiency": "Nativo"
+    },
+    {
+      "language": "Inglês",
+      "proficiency": "Intermediário"
+    }
+  ],
+  "links": [
+    {
+      "type": "GitHub",
+      "url": "https://github.com/seu-usuario"
+    },
+    {
+      "type": "LinkedIn",
+      "url": "https://linkedin.com/in/seu-perfil"
+    },
+    {
+      "type": "Email",
+      "url": "mailto:seu@email.com"
+    }
+  ]
+}

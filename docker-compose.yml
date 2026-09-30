@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: seedgen_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-seedgen_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-seedgen_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-seedgen_jobs}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - seedgen_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-seedgen_user} -d ${POSTGRES_DB:-seedgen_jobs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: seedgen_n8n
+    restart: unless-stopped
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-seedgen_jobs}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-seedgen_user}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-seedgen_pass}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin123}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      # Security (example for API keys)
+      - AI_API_KEY=${AI_API_KEY}
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - N8N_ENV_VARS_ALLOW_ACCESS=*
+      - GEMINI_API_KEY=${AI_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows
+      - ./n8n/credentials:/home/node/credentials
+      - ./candidate:/home/node/candidate
+      - ./generated:/home/node/generated
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - seedgen_network
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  seedgen_network:
+    driver: bridge

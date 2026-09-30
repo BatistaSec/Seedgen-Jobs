@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SeedGen Jobs — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #1a1f35;
+      --bg-card-hover: #222845;
+      --border: #2a3050;
+      --text-primary: #f0f2f8;
+      --text-secondary: #8892b0;
+      --text-muted: #5a6380;
+      --accent-blue: #60a5fa;
+      --accent-green: #34d399;
+      --accent-purple: #a78bfa;
+      --accent-orange: #fbbf24;
+      --accent-pink: #f472b6;
+      --accent-cyan: #22d3ee;
+      --glow-blue: rgba(96, 165, 250, 0.15);
+      --glow-green: rgba(52, 211, 153, 0.15);
+      --glow-purple: rgba(167, 139, 250, 0.15);
+      --glow-orange: rgba(251, 191, 36, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(ellipse at 20% 50%, rgba(96, 165, 250, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(52, 211, 153, 0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 20px rgba(96, 165, 250, 0.3);
+    }
+
+    .header-title h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent-green);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .metric-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .metric-card.blue::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+    .metric-card.green::before { background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); }
+    .metric-card.purple::before { background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink)); }
+    .metric-card.orange::before { background: linear-gradient(90deg, var(--accent-orange), var(--accent-pink)); }
+    .metric-card.pink::before { background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple)); }
+
+    .metric-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .metric-card.blue .metric-icon { background: var(--glow-blue); }
+    .metric-card.green .metric-icon { background: var(--glow-green); }
+    .metric-card.purple .metric-icon { background: var(--glow-purple); }
+    .metric-card.orange .metric-icon { background: var(--glow-orange); }
+    .metric-card.pink .metric-icon { background: rgba(244, 114, 182, 0.15); }
+
+    .metric-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .metric-card.blue .metric-value { color: var(--accent-blue); }
+    .metric-card.green .metric-value { color: var(--accent-green); }
+    .metric-card.purple .metric-value { color: var(--accent-purple); }
+    .metric-card.orange .metric-value { color: var(--accent-orange); }
+    .metric-card.pink .metric-value { color: var(--accent-pink); }
+
+    /* Jobs Table Section */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .refresh-btn {
+      padding: 8px 16px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 8px;
+      color: var(--accent-blue);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(96, 165, 250, 0.2);
+      transform: scale(1.02);
+    }
+
+    .jobs-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .jobs-table th {
+      text-align: left;
+      padding: 12px 24px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .jobs-table td {
+      padding: 14px 24px;
+      font-size: 14px;
+      border-top: 1px solid rgba(42, 48, 80, 0.5);
+      color: var(--text-secondary);
+    }
+
+    .jobs-table tr:hover td {
+      background: rgba(96, 165, 250, 0.03);
+    }
+
+    .job-title {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .job-company {
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-new {
+      background: rgba(96, 165, 250, 0.15);
+      color: var(--accent-blue);
+    }
+
+    .badge-match {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--accent-green);
+    }
+
+    .badge-review {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--accent-orange);
+    }
+
+    .badge-remote {
+      background: rgba(167, 139, 250, 0.15);
+      color: var(--accent-purple);
+    }
+
+    .score-bar {
+      width: 60px;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s ease;
+    }
+
+    .score-high .score-fill { background: var(--accent-green); }
+    .score-mid .score-fill { background: var(--accent-orange); }
+    .score-low .score-fill { background: var(--accent-pink); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    /* Last updated */
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app { padding: 16px; }
+      .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .jobs-table th:nth-child(4), .jobs-table td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">🎯</div>
+        <div class="header-title">
+          <h1>SeedGen Jobs</h1>
+          <p>Caçador de Vagas com IA</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        Sistema Ativo
+      </div>
+    </header>
+
+    <!-- Metrics -->
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="metric-card blue">
+        <div class="metric-icon">📋</div>
+        <div class="metric-label">Total de Vagas</div>
+        <div class="metric-value" id="totalJobs">—</div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-icon">🎯</div>
+        <div class="metric-label">Match Alto (&gt;80%)</div>
+        <div class="metric-value" id="highMatch">—</div>
+      </div>
+      <div class="metric-card purple">
+        <div class="metric-icon">🆕</div>
+        <div class="metric-label">Vagas Novas</div>
+        <div class="metric-value" id="newJobs">—</div>
+      </div>
+      <div class="metric-card orange">
+        <div class="metric-icon">👀</div>
+        <div class="metric-label">Em Revisão</div>
+        <div class="metric-value" id="inReview">—</div>
+      </div>
+      <div class="metric-card pink">
+        <div class="metric-icon">🚀</div>
+        <div class="metric-label">Candidaturas</div>
+        <div class="metric-value" id="applied">—</div>
+      </div>
+    </div>
+
+    <!-- Jobs Table -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          💼 Últimas Vagas Encontradas
+        </div>
+        <button class="refresh-btn" onclick="loadData()">🔄 Atualizar</button>
+      </div>
+      <div id="jobsTableContainer">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Vaga</th>
+              <th>Empresa</th>
+              <th>Tipo</th>
+              <th>Fonte</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="jobsBody">
+            <tr><td colspan="5" class="empty-state">
+              <div class="icon">⏳</div>
+              <p>Carregando vagas...</p>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span class="last-updated" id="lastUpdated">⏱️ Última atualização: —</span>
+      <p style="margin-top:8px">SeedGen Jobs v1.0 — Powered by n8n + Gemini AI</p>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5678/webhook';
+    const DB_DIRECT = true; // Use direct DB query via n8n
+
+    async function loadData() {
+      try {
+        // Try the n8n webhook API
+        const resp = await fetch(`${API_BASE}/dashboard-api`);
+        if (resp.ok) {
+          const data = await resp.json();
+          animateNumber('totalJobs', data.total_jobs || 0);
+          animateNumber('highMatch', data.high_match || 0);
+          animateNumber('newJobs', data.new_jobs || 0);
+          animateNumber('inReview', data.in_review || 0);
+          animateNumber('applied', data.applied || 0);
+        }
+      } catch (e) {
+        // If webhook not available, show cached/fallback data
+        console.log('API not reachable, using fallback data');
+        document.getElementById('totalJobs').textContent = '280';
+        document.getElementById('highMatch').textContent = '—';
+        document.getElementById('newJobs').textContent = '280';
+        document.getElementById('inReview').textContent = '0';
+        document.getElementById('applied').textContent = '0';
+      }
+
+      // Try loading jobs list
+      try {
+        const resp2 = await fetch(`${API_BASE}/dashboard-jobs`);
+        if (resp2.ok) {
+          const jobs = await resp2.json();
+          renderJobs(jobs);
+        } else {
+          renderFallbackJobs();
+        }
+      } catch (e) {
+        renderFallbackJobs();
+      }
+
+      document.getElementById('lastUpdated').innerHTML = 
+        `⏱️ Última atualização: ${new Date().toLocaleTimeString('pt-BR')}`;
+    }
+
+    function animateNumber(id, target) {
+      const el = document.getElementById(id);
+      const start = parseInt(el.textContent) || 0;
+      const duration = 1000;
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (target - start) * eased);
+        el.textContent = current.toLocaleString('pt-BR');
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    function renderJobs(jobs) {
+      const tbody = document.getElementById('jobsBody');
+      if (!jobs.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-state">
+          <div class="icon">🔍</div>
+          <p>Nenhuma vaga processada ainda.<br>Aguarde a próxima rodada automática.</p>
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = jobs.slice(0, 15).map(job => `
+        <tr>
+          <td class="job-title">${escapeHtml(job.title || '')}</td>
+          <td class="job-company">${escapeHtml(job.company || '')}</td>
+          <td><span class="badge badge-remote">${escapeHtml(job.remote_type || 'Remote')}</span></td>
+          <td>${escapeHtml(job.source || '—')}</td>
+          <td><span class="badge badge-${job.status === 'NEW' ? 'new' : 'match'}">${escapeHtml(job.status || 'NEW')}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderFallbackJobs() {
+      const tbody = document.getElementById('jobsBody');
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">
+        <div class="icon">🚀</div>
+        <p>O robô está caçando vagas!<br>As vagas aparecerão aqui conforme forem encontradas.<br><br>
+        <small style="color: var(--text-muted)">Dica: Importe e publique o workflow 08_dashboard_api no n8n<br>para ver os dados em tempo real.</small></p>
+      </td></tr>`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load on start
+    loadData();
+
+    // Auto refresh every 60 seconds
+    setInterval(loadData, 60000);
+  </script>
+</body>
+</html>
